@@ -5,7 +5,8 @@
 #include <math.h>
 #include <vector>
 #include <omp.h>
-#include <mpi.h>
+//#include <mpi.h>
+#include <cuda.h>
 
 using namespace std;
 
@@ -81,7 +82,6 @@ namespace Neural
 		static bool mpi_finalized;
 
         Network();
-		// ~Network();
         Network(vector<vector<double>>, vector<vector<double>>);
 
         void run();
@@ -106,6 +106,8 @@ namespace Neural
         void setLearningRate(double);
         void setErrorTolerance(double);
         void setParameter(int, int, double, double = 1, int = 1);
+
+        __global__ void autoTrainingKernel(Network*, int, double, Network*)
     };
 
 }

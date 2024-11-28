@@ -1,35 +1,48 @@
 # Compila a versão sequencial por padrao
 VERSION = Sequencial
-COMPILER = mpic++ -std=c++11 -Wall -g
+CPP_COMPILER = mpic++ -std=c++11 -Wall -g
+CUDA_COMPILER = nvcc -std=c++11 -g
 SRC_DIR = srcSequencial
 
 ifeq ($(VERSION),OpenMP)
 	SRC_DIR = srcOpenMP
-	COMPILER = mpic++ -std=c++11 -Wall -g -DNUM_THREADS=$(NUM_THREADS) -fopenmp
+	CPP_COMPILER = mpic++ -std=c++11 -Wall -g -DNUM_THREADS=$(NUM_THREADS) -fopenmp
 else ifeq ($(VERSION),MPI)
 	SRC_DIR = srcMPI
-	COMPILER = mpic++ -std=c++11 -Wall -g -DNUM_THREADS=$(NUM_THREADS) -fopenmp
+	CPP_COMPILER = mpic++ -std=c++11 -Wall -g -DNUM_THREADS=$(NUM_THREADS) -fopenmp
+else ifeq ($(VERSION),OpenMP_GPU)
+	SRC_DIR = srcOpenMP_GPU
+	CPP_COMPILER = mpic++ -std=c++11 -Wall -g -DNUM_THREADS=$(NUM_THREADS) -fopenmp
+else ifeq ($(VERSION),CUDA)
+	SRC_DIR = srcCUDA
 else
 	SRC_DIR = srcSequencial
-	COMPILER = mpic++ -std=c++11 -Wall -g
+	CPP_COMPILER = mpic++ -std=c++11 -Wall -g
 endif
 
 EXEC_PROG = neuralnetwork
 BINARIES = $(EXEC_PROG)
 
-SOURCES := $(shell find $(SRC_DIR) -name '*.cpp')
-OBJECTS = main.o $(SOURCES:.cpp=.o)
+CPP_SOURCES := $(shell find $(SRC_DIR) -name '*.cpp')
+CU_SOURCES := $(shell find $(SRC_DIR) -name '*.cu')
+
+CPP_OBJECTS = $(CPP_SOURCES:.cpp=.o)
+CU_OBJECTS = $(CU_SOURCES:.cu=.o)
+
+OBJECTS = main.o $(CPP_OBJECTS) $(CU_OBJECTS)
 
 all: clean $(EXEC_PROG)
 	@echo Neural Network Build Completed
 
 %.o: %.cpp
-	$(COMPILER) -c -o $@ $< -w
+	$(CPP_COMPILER) -c -o $@ $< -w
+
+%.o: %.cu
+	$(CUDA_COMPILER) -c -o $@ $< -w
 
 $(EXEC_PROG): $(OBJECTS)
-	$(COMPILER) -o $(EXEC_PROG) $(OBJECTS) 
+	$(CPP_COMPILER) -o $(EXEC_PROG) $(OBJECTS) 
 
-# prevents make from getting confused
 .PHONY : run
 run:
 	./$(EXEC_PROG)
